@@ -16,10 +16,16 @@ const siswa = require("./api/siswa");
 const SiswaService = require("./services/postgres/siswaServices");
 const SiswaValidator = require("./validator/siswa");
 
+// peminjaman
+const peminjaman = require("./api/peminjaman");
+const PeminjamanService = require("./services/postgres/peminjamanServices");
+const PeminjamanValidator = require("./validator/peminjaman");
+
 const init = async () => {
   const bengkelServices = new BengkelService();
   const alatServices = new AlatService();
   const siswaServices = new SiswaService();
+  const peminjamanServices = new PeminjamanService();
 
   const server = Hapi.server({
     port: 3000,
@@ -51,6 +57,13 @@ const init = async () => {
       options: {
         service: siswaServices,
         validator: SiswaValidator,
+      },
+    },
+    {
+      plugin: peminjaman,
+      options: {
+        service: peminjamanServices,
+        validator: PeminjamanValidator,
       },
     },
   ]);
