@@ -58,11 +58,13 @@ class PeminjamanService {
                 peminjaman.id_peminjaman,
                 siswa.nama_siswa,
                 alat.nama_alat,
+                bengkel.ruang_bengkel,
                 peminjaman.jumlah,
                 peminjaman.tanggal_pinjam
             FROM peminjaman
             INNER JOIN siswa ON peminjaman.nis = siswa.nis
             INNER JOIN alat ON peminjaman.id_alat = alat.id_alat
+            INNER JOIN bengkel ON alat.id_bengkel = bengkel.id_bengkel
         `;
         const result = await this._pool.query(query);
         return result.rows;
