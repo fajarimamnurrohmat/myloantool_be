@@ -19,5 +19,18 @@ const routes = (handler) => [
         path: "/bengkel/{id_bengkel}",
         handler: handler.deleteBengkelByIdHandler,
     },
+    {
+        method: "POST",
+        path: "/bengkel/upload",
+        handler: handler.uploadBengkelHandler,
+        options: {
+            payload: {
+                allow: 'multipart/form-data',
+                output: 'stream',
+                parse: true,
+                multipart: true,
+            }
+        }
+    }
 ];
 module.exports = routes;
