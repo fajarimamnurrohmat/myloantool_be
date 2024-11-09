@@ -78,6 +78,7 @@ class AlatBermasalahService {
                 alat.nama_alat,
                 bengkel.ruang_bengkel,
                 alat_bermasalah.jumlah,
+                peminjaman.tanggal_pinjam,
                 alat_bermasalah.tgl_permasalahan,
                 alat_bermasalah.kondisi
             FROM alat_bermasalah

@@ -70,6 +70,7 @@ class PengembalianService {
                 alat.nama_alat,
                 bengkel.ruang_bengkel,
                 pengembalian.jumlah,
+                peminjaman.tanggal_pinjam,
                 pengembalian.tgl_kembali
             FROM pengembalian
             INNER JOIN peminjaman ON pengembalian.id_peminjaman = peminjaman.id_peminjaman
@@ -79,7 +80,7 @@ class PengembalianService {
         `;
         const result = await this._pool.query(query);
         return result.rows;
-    }
+    }    
 }
 
 module.exports = PengembalianService;

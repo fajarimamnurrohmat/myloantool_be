@@ -27,7 +27,7 @@ class alatService {
         const query = `
             SELECT 
                 alat.id_alat, 
-                bengkel.ruang_bengkel, 
+                bengkel.ruang_bengkel,
                 alat.nama_alat, 
                 alat.jumlah
             FROM 
