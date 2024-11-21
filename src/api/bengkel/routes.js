@@ -13,9 +13,9 @@ const routes = (handler) => [
         method: "GET",
         path: "/bengkel",
         handler: handler.getBengkelHandler,
-        options: {
-            auth: 'loansapp_jwt',
-        },
+        // options: {
+        //     auth: 'loansapp_jwt',
+        // },
     },
     {
         method: "PUT",

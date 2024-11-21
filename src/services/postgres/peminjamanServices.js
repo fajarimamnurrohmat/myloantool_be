@@ -65,6 +65,7 @@ class PeminjamanService {
             INNER JOIN siswa ON peminjaman.nis = siswa.nis
             INNER JOIN alat ON peminjaman.id_alat = alat.id_alat
             INNER JOIN bengkel ON alat.id_bengkel = bengkel.id_bengkel
+            WHERE peminjaman.jumlah > 0
         `;
         const result = await this._pool.query(query);
         return result.rows;
@@ -158,38 +159,55 @@ class PeminjamanService {
 
     // Menghapus peminjaman dan mengembalikan stok alat
     async deletePeminjamanById(id_peminjaman) {
-        // Dapatkan data peminjaman sebelum dihapus
-        const getPeminjamanQuery = {
-            text: 'SELECT id_alat, jumlah FROM peminjaman WHERE id_peminjaman = $1',
-            values: [id_peminjaman],
-        };
-        const peminjamanResult = await this._pool.query(getPeminjamanQuery);
-
-        if (!peminjamanResult.rows.length) {
-            throw new notFoundError('Peminjaman tidak ditemukan');
-        }
-
-        const { id_alat, jumlah } = peminjamanResult.rows[0];
-
-        // Kembalikan stok alat
-        const updateAlatQuery = {
-            text: 'UPDATE alat SET jumlah = jumlah + $1 WHERE id_alat = $2',
-            values: [jumlah, id_alat],
-        };
-        await this._pool.query(updateAlatQuery);
-
-        // Hapus peminjaman
-        const deletePeminjamanQuery = {
-            text: 'DELETE FROM peminjaman WHERE id_peminjaman = $1 RETURNING id_peminjaman',
-            values: [id_peminjaman],
-        };
-
-        const result = await this._pool.query(deletePeminjamanQuery);
-
-        if (!result.rows.length) {
-            throw new notFoundError('Peminjaman gagal dihapus. Id tidak ditemukan');
+        const client = await this._pool.connect();
+    
+        try {
+            // Mulai transaksi
+            await client.query('BEGIN');
+    
+            // Dapatkan data peminjaman sebelum mencoba menghapus
+            const getPeminjamanQuery = {
+                text: 'SELECT id_alat, jumlah FROM peminjaman WHERE id_peminjaman = $1',
+                values: [id_peminjaman],
+            };
+            const peminjamanResult = await client.query(getPeminjamanQuery);
+    
+            if (!peminjamanResult.rows.length) {
+                throw new notFoundError('Peminjaman tidak ditemukan');
+            }
+    
+            const { id_alat, jumlah } = peminjamanResult.rows[0];
+    
+            // Coba hapus peminjaman
+            const deletePeminjamanQuery = {
+                text: 'DELETE FROM peminjaman WHERE id_peminjaman = $1 RETURNING id_peminjaman',
+                values: [id_peminjaman],
+            };
+            const result = await client.query(deletePeminjamanQuery);
+    
+            // Jika penghapusan berhasil, tambahkan stok alat
+            if (result.rows.length) {
+                const updateAlatQuery = {
+                    text: 'UPDATE alat SET jumlah = jumlah + $1 WHERE id_alat = $2',
+                    values: [jumlah, id_alat],
+                };
+                await client.query(updateAlatQuery);
+            } else {
+                throw new notFoundError('Peminjaman gagal dihapus.terpengaruh aturan ON DELETE RESTRICT');
+            }
+    
+            // Commit transaksi jika semua operasi berhasil
+            await client.query('COMMIT');
+        } catch (error) {
+            // Rollback jika terjadi kesalahan
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            // Pastikan koneksi dilepaskan
+            client.release();
         }
     }
+    
 }
 
 module.exports = PeminjamanService;
