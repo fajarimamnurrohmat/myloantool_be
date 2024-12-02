@@ -19,9 +19,9 @@ const routes = (handler) => [
     method: "PUT",
     path: "/peminjaman/{id_peminjaman}",
     handler: handler.putPeminjamanByIdHandler,
-    options: {
-      auth: "loansapp_jwt",
-    },
+    // options: {
+    //   auth: "loansapp_jwt",
+    // },
   },
   {
     method: "DELETE",

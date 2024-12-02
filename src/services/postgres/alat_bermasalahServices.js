@@ -12,62 +12,46 @@ class AlatBermasalahService {
 
     async addAlatBermasalah({ id_peminjaman, tgl_permasalahan, kondisi, jumlah }) {
         const id_alat_bermasalah = nanoid(16);
-
+    
         // Ambil jumlah alat yang dipinjam dari tabel peminjaman
         const queryGetPeminjaman = {
             text: 'SELECT jumlah FROM peminjaman WHERE id_peminjaman = $1',
             values: [id_peminjaman],
         };
         const peminjamanResult = await this._pool.query(queryGetPeminjaman);
-
+    
         if (!peminjamanResult.rows.length) {
             throw new notFoundError('Peminjaman tidak ditemukan');
         }
-
+    
         const { jumlah: jumlahDipinjam } = peminjamanResult.rows[0];
 
-        // Hitung total alat bermasalah yang sudah ada
-        const queryTotalAlatBermasalah = {
-            text: 'SELECT COALESCE(SUM(jumlah), 0) AS total FROM alat_bermasalah WHERE id_peminjaman = $1',
-            values: [id_peminjaman],
-        };
-        const totalAlatBermasalahResult = await this._pool.query(queryTotalAlatBermasalah);
-        const totalAlatBermasalah = parseInt(totalAlatBermasalahResult.rows[0].total, 10);
-
+    
         // Validasi jumlah alat bermasalah
-        if (totalAlatBermasalah + jumlah > jumlahDipinjam) {
+        if (jumlah > jumlahDipinjam) {
             throw new invariantError('Jumlah alat bermasalah melebihi jumlah alat yang dipinjam');
         }
-
+    
         // Insert alat bermasalah
         const queryAlatBermasalah = {
             text: 'INSERT INTO alat_bermasalah (id_alat_bermasalah, id_peminjaman, tgl_permasalahan, kondisi, jumlah) VALUES($1, $2, $3, $4, $5) RETURNING id_alat_bermasalah',
             values: [id_alat_bermasalah, id_peminjaman, tgl_permasalahan, kondisi, jumlah],
         };
         const result = await this._pool.query(queryAlatBermasalah);
-
+    
         if (!result.rows[0].id_alat_bermasalah) {
             throw new invariantError('Alat bermasalah gagal ditambahkan');
         }
-
-        // Jika alat bermasalah sama dengan atau lebih dari jumlah yang dipinjam, hapus peminjaman
-        if (totalAlatBermasalah + jumlah >= jumlahDipinjam) {
-            const queryDeletePeminjaman = {
-                text: 'DELETE FROM peminjaman WHERE id_peminjaman = $1',
-                values: [id_peminjaman],
-            };
-            await this._pool.query(queryDeletePeminjaman);
-        } else {
-            // Jika sebagian alat bermasalah, update jumlah di tabel peminjaman
-            const queryUpdatePeminjaman = {
-                text: 'UPDATE peminjaman SET jumlah = jumlah - $1 WHERE id_peminjaman = $2',
-                values: [jumlah, id_peminjaman],
-            };
-            await this._pool.query(queryUpdatePeminjaman);
-        }
-
+    
+        // Update jumlah di tabel peminjaman
+        const queryUpdatePeminjaman = {
+            text: 'UPDATE peminjaman SET jumlah = jumlah - $1 WHERE id_peminjaman = $2',
+            values: [jumlah, id_peminjaman],
+        };
+        await this._pool.query(queryUpdatePeminjaman);
+    
         return result.rows[0].id_alat_bermasalah;
-    }
+    }    
 
     async getAlatBermasalah() {
         const query = `
