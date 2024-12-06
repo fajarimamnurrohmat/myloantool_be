@@ -11,9 +11,9 @@ const routes = (handler) => [
         method: "GET",
         path: "/siswa",
         handler: handler.getSiswaHandler,
-        // options: {
-        //     auth: 'loansapp_jwt',
-        // },
+        options: {
+            auth: 'loansapp_jwt',
+        },
     },
     {
         method: "PUT",
