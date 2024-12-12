@@ -15,6 +15,14 @@ const routes = (handler) => [
             auth: 'loansapp_jwt',
         },
     },
+    {
+        method: "POST",
+        path: "/pengembalian-alat-bermasalah/{id_alat_bermasalah}",
+        handler: handler.postPengembalianAlatBermasalahHandler,
+        // options: {
+        //     auth: 'loansapp_jwt',
+        // },
+    },
 ];
 
 module.exports = routes;

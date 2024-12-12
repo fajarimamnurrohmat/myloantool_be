@@ -7,6 +7,7 @@ class AlatBermasalahHandler {
 
         this.postAlatBermasalahHandler = this.postAlatBermasalahHandler.bind(this);
         this.getAlatBermasalahHandler = this.getAlatBermasalahHandler.bind(this);
+        this.postPengembalianAlatBermasalahHandler = this.postPengembalianAlatBermasalahHandler.bind(this);
     }
 
     async postAlatBermasalahHandler(request, h) {
@@ -49,6 +50,39 @@ class AlatBermasalahHandler {
             },
         };
     }
+
+    async postPengembalianAlatBermasalahHandler(request, h) {
+        try {
+            const { id_alat_bermasalah } = request.params;
+            const { id_peminjaman, tgl_kembali, jumlah } = request.payload;
+    
+            //this._validator.validatePengembalianAlatPayload(request.payload);
+    
+            const id_pengembalian = await this._service.addPengembalianAlatBermasalah({
+                id_peminjaman,
+                tgl_kembali,
+                jumlah,
+                id_alat_bermasalah,
+            });
+    
+            const response = h.response({
+                status: 'success',
+                message: 'Pengembalian alat bermasalah berhasil ditambahkan',
+                data: {
+                    id_pengembalian,
+                },
+            });
+            response.code(201);
+            return response;
+        } catch (error) {
+            const response = h.response({
+                status: 'fail',
+                message: error.message,
+            });
+            response.code(400);
+            return response;
+        }
+    }       
 }
 
 module.exports = AlatBermasalahHandler;
