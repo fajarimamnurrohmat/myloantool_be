@@ -1,3 +1,6 @@
+const fs = require('fs');
+const os = require('os');
+
 class SiswaHandler {
     constructor(service, validator) {
         this._service = service;
@@ -7,6 +10,7 @@ class SiswaHandler {
         this.getSiswaHandler = this.getSiswaHandler.bind(this);
         this.putSiswaByIdHandler = this.putSiswaByIdHandler.bind(this);
         this.deleteSiswaByIdHandler = this.deleteSiswaByIdHandler.bind(this);
+        this.importSiswaFromExcelHandler = this.importSiswaFromExcelHandler.bind(this);
     }
 
     // Menambahkan data siswa baru
@@ -85,6 +89,56 @@ class SiswaHandler {
             });
             response.code(404);
             return response;
+        }
+    }
+
+    async importSiswaFromExcelHandler(request, h) {
+        console.log('importSiswaFromExcelHandler called');
+        try {
+            console.log('Request Payload:', request.payload); 
+            const { file } = request.payload;
+    
+            // Pastikan file ada dan merupakan file Excel
+            if (!file ) {
+                return h.response({
+                    status: 'fail',
+                    message: 'File harus berupa file Excel',
+                }).code(400);
+            }
+    
+            // Simpan file sementara
+            const filePath = `${os.tmpdir()}/${file.filename}`;
+    
+            if (file && file.path) {
+                console.log('File path:', file.path);
+            
+                // Pindahkan file ke lokasi sementara
+                const tempFilePath = `${os.tmpdir()}/${file.filename}`;
+                await fs.promises.copyFile(file.path, tempFilePath);
+            
+                // Panggil fungsi untuk memproses file
+                const result = await this._service.importSiswaFromExcel(tempFilePath);
+            
+                // Hapus file sementara setelah selesai
+                await fs.promises.unlink(tempFilePath);
+            
+                return h.response({
+                    status: 'success',
+                    message: result.message,
+                }).code(200);
+            } else {
+                return h.response({
+                    status: 'fail',
+                    message: 'File harus berupa file Excel',
+                }).code(400);
+            }
+        } 
+        catch (error) {
+            console.error('Error during import:', error); // Menambahkan logging untuk debugging
+            return h.response({
+                status: 'fail',
+                message: error.message,
+            }).code(500);
         }
     }
 }

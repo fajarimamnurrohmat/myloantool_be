@@ -1,5 +1,6 @@
 const { Pool } = require("pg");
 const { nanoid } = require("nanoid");
+const xlsx = require("xlsx");
 const notFoundError = require("../../exceptions/notFoundError");
 const invariantError = require("../../exceptions/invariantError");
 
@@ -63,6 +64,41 @@ class alatService {
         if (!result.rows.length) {
             throw new notFoundError("Alat gagal dihapus. Id tidak ditemukan");
         }
+    }
+
+    async importAlatFromExcel(filePath) {
+        // Baca file Excel
+        const workbook = xlsx.readFile(filePath);
+        const sheetName = workbook.SheetNames[0]; // Ambil sheet pertama
+        const worksheet = workbook.Sheets[sheetName];
+
+        // Ambil data dari rentang A2:D100
+        const sheetData = xlsx.utils.sheet_to_json(worksheet, {
+            range: "A2:D100", // Rentang data
+            header: ["id_bengkel", "nama_alat", "jumlah"], // Mapping header
+            defval: null, // Nilai default untuk cell kosong
+        });
+
+        // Iterasi setiap baris data dan tambahkan ke database
+        for (const row of sheetData) {
+            const { id_bengkel, nama_alat, jumlah } = row;
+
+            // Validasi data wajib
+            if (!id_bengkel || !nama_alat || jumlah == null) {
+                console.error(`Data tidak valid: ${JSON.stringify(row)}`);
+                continue; // Lewati data yang tidak valid
+            }
+
+            try {
+                await this.addAlat({ id_bengkel, nama_alat, jumlah });
+            } catch (error) {
+                console.error(
+                    `Gagal menambahkan alat dengan nama ${nama_alat}: ${error.message}`
+                );
+            }
+        }
+
+        return { message: "Import data alat berhasil" };
     }
 }
 

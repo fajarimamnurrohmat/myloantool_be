@@ -1,4 +1,5 @@
 const { Pool } = require("pg");
+const xlsx = require("xlsx");
 const notFoundError = require("../../exceptions/notFoundError");
 const invariantError = require("../../exceptions/invariantError");
 
@@ -48,6 +49,39 @@ class SiswaService {
         if (!result.rows.length) {
             throw new notFoundError("Siswa gagal dihapus. NIS tidak ditemukan");
         }
+    }
+
+    async importSiswaFromExcel(filePath) {
+        // Baca file Excel
+        const workbook = xlsx.readFile(filePath);
+        const sheetName = workbook.SheetNames[0]; // Ambil sheet pertama
+        const worksheet = workbook.Sheets[sheetName];
+
+        // Ambil data dari rentang B3:E100
+        const sheetData = xlsx.utils.sheet_to_json(worksheet, {
+            range: "B3:E100",
+            header: ["nis", "nama_siswa", "jenis_kelamin", "jurusan"], // Mapping header
+            defval: null, // Isi default untuk cell kosong
+        });
+
+        // Iterasi setiap baris data dan tambahkan ke database
+        for (const row of sheetData) {
+            const { nis, nama_siswa, jenis_kelamin, jurusan } = row;
+
+            // Validasi data wajib
+            if (!nis || !nama_siswa || !jenis_kelamin || !jurusan) {
+                console.error(`Data tidak valid: ${JSON.stringify(row)}`);
+                continue; // Lewati data yang tidak valid
+            }
+
+            try {
+                await this.addSiswa({ nis, nama_siswa, jenis_kelamin, jurusan });
+            } catch (error) {
+                console.error(`Gagal menambahkan siswa dengan NIS ${nis}: ${error.message}`);
+            }
+        }
+
+        return { message: "Import data siswa berhasil" };
     }
 }
 
